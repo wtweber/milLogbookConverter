@@ -4,16 +4,21 @@ from tims import tims
 from CNAFenums import Approach, Landing, Role, Hours
 import numpy as np
 
+
+
 def main():
     msharp_file = '/home/wtweber/github/flight_logs/MSHARP2.0 AirCrewLogBook.xlsx'
     tims_file = '/home/wtweber/github/flight_logs/IndividualFlightHours_wizard.xlsx'
+    #tims_navflirs = '/home/wtweber/github/flight_logs/Processed files/Navflirs'
+    tims_navflirs = "/home/wtweber/github/flight_logs/Navflirs"
     Aircraft = ['KC-130J']
 
-    data = msharp(msharp_file, Aircraft)
+    msharp_data = msharp(msharp_file, Aircraft)
+    tims_data = tims(tims_file,  nav_folder = tims_navflirs, EDIPI="1296076264")
 
-    print(mil2civ(data))
+    output_data = mil2civ(msharp_data.append(tims_data, ignore_index=True, sort=False))
 
-    tims(tims_file)
+    print(output_data)
 
 
 def mil2civ(df=pd.DataFrame()):
@@ -30,7 +35,10 @@ def mil2civ(df=pd.DataFrame()):
     df["SIC"] = df.apply(lambda row: row["TPT"] if Role[row["Role"]].RoleType == "SIC"  else np.nan , axis=1)
 
 
-    return df
+    return df.sort_values(by='Date').reset_index(drop=True)
+
+
+
 
 if __name__ == "__main__":
     main()

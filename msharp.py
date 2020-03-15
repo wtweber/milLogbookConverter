@@ -51,7 +51,7 @@ def msharp(log_file, aircraft_filter='All'):
     ###############################################
     ##               Clean Date                  ##
     ###############################################
-    msharp_data["Date"] = msharp_data["Date"].apply(lambda x: x.strftime('%d/%m/%Y'))
+    #msharp_data["Date"] = msharp_data["Date"].apply(lambda x: x.strftime('%d/%m/%Y'))
 
     ###############################################
     ##               Add role                    ##
@@ -60,10 +60,11 @@ def msharp(log_file, aircraft_filter='All'):
 
     msharp_data["Record"] = msharp_data.apply(lambda x: uuid.uuid4(), axis=1)
     msharp_data["Sorties"] = 1
+    msharp_data = msharp_data.rename(columns={"TMS": "Model", "ACT": "AIT"})
     ###############################################
     ##               Filter Aircraft             ##
     ###############################################
     if aircraft_filter == 'All':
         return msharp_data
     else:
-        return msharp_data[msharp_data.TMS.isin(aircraft_filter)].reset_index(drop=True)
+        return msharp_data[msharp_data.Model.isin(aircraft_filter)].reset_index(drop=True)
