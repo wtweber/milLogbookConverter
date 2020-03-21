@@ -8,9 +8,9 @@ import numpy as np
 
 def main():
     msharp_file = '/home/wtweber/github/flight_logs/MSHARP2.0 AirCrewLogBook.xlsx'
-    tims_file = '/home/wtweber/github/flight_logs/IndividualFlightHours_wizard.xlsx'
-    #tims_navflirs = '/home/wtweber/github/flight_logs/Processed files/Navflirs'
-    tims_navflirs = "/home/wtweber/github/flight_logs/Navflirs"
+    tims_file = '/home/wtweber/Desktop/IndividualFlightHours_wizard.xlsx'
+    tims_navflirs = '/home/wtweber/github/flight_logs/Processed files/Navflirs'
+    #tims_navflirs = "/home/wtweber/github/flight_logs/Navflirs"
     Aircraft = ['KC-130J']
 
     msharp_data = msharp(msharp_file, Aircraft)
