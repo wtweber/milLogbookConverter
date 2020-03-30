@@ -77,18 +77,17 @@ def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000
         files = getFILES(folder = nav_folder)
         bar = Bar('NAVFLIRS:', max=len(files))
         for file in files:
-            pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)[1]
+            pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)[0]
+            admin_index = 0#pdf_data.index[pdf_data.loc[:, 0]=='Admin'].tolist()#[0]
+            sorties_index = pdf_data.index[pdf_data["Admin"] == 'Sorties'].tolist()[0]
+            logistics_index = pdf_data.index[pdf_data["Admin"] == 'Logistics'].tolist()[0]
+            aircrew_index = pdf_data.index[pdf_data["Admin"] == 'Aircrew'].tolist()[0]
+            tactical_index = pdf_data.index[pdf_data["Admin"] == 'Tactical'].tolist()[0]
+            training_index = pdf_data.index[pdf_data["Admin"] == 'Training'].tolist()[0]
+            activities_index = pdf_data.index[pdf_data["Admin"] == 'Activities'].tolist()[0]
+            engine_index = pdf_data.index[pdf_data["Admin"] == 'Engines'].tolist()[0]
 
-            admin_index = pdf_data.index[pdf_data.loc[:, 0]=='Admin'].tolist()[0]
-            sorties_index = pdf_data.index[pdf_data.loc[:, 0] == 'Sorties'].tolist()[0]
-            logistics_index = pdf_data.index[pdf_data.loc[:, 0] == 'Logistics'].tolist()[0]
-            aircrew_index = pdf_data.index[pdf_data.loc[:, 0] == 'Aircrew'].tolist()[0]
-            tactical_index = pdf_data.index[pdf_data.loc[:, 0] == 'Tactical'].tolist()[0]
-            training_index = pdf_data.index[pdf_data.loc[:, 0] == 'Training'].tolist()[0]
-            activities_index = pdf_data.index[pdf_data.loc[:, 0] == 'Activities'].tolist()[0]
-            engine_index = pdf_data.index[pdf_data.loc[:, 0] == 'Engines'].tolist()[0]
-
-            Admin = clean_pd(pdf_data.loc[admin_index+1:sorties_index-1, :])
+            Admin = clean_pd(pdf_data.loc[admin_index:sorties_index-1, :])
             Sorties = clean_pd(pdf_data.loc[sorties_index+1:logistics_index-1, :])
             Aircrew = clean_pd(pdf_data.loc[aircrew_index+1:tactical_index-1, :])
             Activities = clean_pd(pdf_data.loc[activities_index+1:engine_index-1, :])

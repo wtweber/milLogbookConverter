@@ -6,17 +6,27 @@ import uuid, re
 
 def msharp(log_file, aircraft_filter='All'):
     msharp_data_raw = pd.read_excel(log_file, index_col=None)
-    Column_type = msharp_data_raw.iloc[2]
-
+    #print(msharp_data_raw)
+    Column_type = msharp_data_raw.iloc[4]
+    #print(Column_type)
     Landings_start = pd.Index(Column_type).get_loc('Landings')
     App_start = pd.Index(Column_type).get_loc('App')
 
-    msharp_data_raw.iat[3,0] = "Date"
-    msharp_data = msharp_data_raw[5:]
-    msharp_data.columns = msharp_data_raw.iloc[3].fillna('DROP')
+
+    msharp_data_raw.iat[5,2] = "Date"
+    #print(msharp_data_raw)
+    msharp_data = msharp_data_raw[7:msharp_data_raw.loc[msharp_data_raw.iloc[:,2] == 'Career Totals'].index.values[0]]
+
+    msharp_data.columns = msharp_data_raw.iloc[5].fillna('DROP')
+    #print(msharp_data)
     msharp_data = msharp_data.drop('DROP', axis=1)
     msharp_data.columns = msharp_data.columns.astype(str)
     msharp_data = msharp_data.reset_index(drop=True)
+
+    #print(msharp_data)
+
+    #career = msharp_data.loc[msharp_data['Date'] == 'Career Totals']
+    #print(career.index.values)
 
 
     ###############################################
@@ -57,10 +67,10 @@ def msharp(log_file, aircraft_filter='All'):
     ##               Add role                    ##
     ###############################################
     msharp_data["Role"] = msharp_data.apply(lambda row: Role.ACFT_CMDR.name if row["ACMDR"] > 0.0 else (Role.COPILOT.name if row["TPT"] > 0.0 else Role.OTHER.name) , axis=1)
+    msharp_data = msharp_data.rename(columns={"TMS": "Model", "ACT": "AIT", "NAVFLIR":"Record"})
 
-    msharp_data["Record"] = msharp_data.apply(lambda x: uuid.uuid4(), axis=1)
+    msharp_data["Record"] = msharp_data["Record"].apply(lambda x: str(uuid.uuid4())[:8] if pd.isna(x) else x)
     msharp_data["Sorties"] = 1
-    msharp_data = msharp_data.rename(columns={"TMS": "Model", "ACT": "AIT"})
     ###############################################
     ##               Filter Aircraft             ##
     ###############################################
