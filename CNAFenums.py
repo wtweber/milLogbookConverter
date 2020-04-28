@@ -155,7 +155,12 @@ class Hours(Enum):
     SCT = "Special Crew Time"
     TR = "T&R Codes"
 
-
+def title_map(type = None):
+    if not type:
+        return {}
+    elif type =='MSHARP':
+        return {
+        }
 # class EnumEncoder(json.JSONEncoder):
 #     def default(self, obj):
 #         print(type(obj))

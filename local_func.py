@@ -1,7 +1,7 @@
 from fnmatch import fnmatch
 import os
 
-def getFILES(folder = os.path.join(os.getcwd(), "Navflirs"), pattern = "*.pdf"):
+def getFILES(folder = os.getcwd(), pattern = "*.pdf"):
     list = []
     for path, subdirs, files in os.walk(folder):
         for name in files:
