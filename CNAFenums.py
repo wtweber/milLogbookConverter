@@ -95,8 +95,17 @@ class Landing(Enum):
     NightVSTOLSlow = 'H'
     NightVSTOLVert = 'J'
     NightVSTOLVertRoll = 'K'
-    NVGFDLP = 'Q'
+    NVGFCLP = 'Q'
     OTHER = '?'
+
+    @property
+    def LdgType(self):
+        if self in [Landing.DayLdg, Landing.ShipArrest, Landing.ShipT_G, Landing.ShipBolter, Landing.FCLP, Landing.FiledArrest, Landing.VSTOLSlow, Landing.VSTOLVert, Landing.VSTOLVertRoll]:
+            return "Day"
+        elif self in [Landing.NightLdg, Landing.NVGLdg, Landing.NightShipArrest, Landing.NightShipT_G, Landing.NightShipBolter, Landing.NightFCLP, Landing.NightFiledArrest, Landing.NightVSTOLSlow, Landing.NightVSTOLVert, Landing.NightVSTOLVertRoll, Landing.NVGFCLP]:
+            return "Night"
+        else:
+            return "Other"
 
 class Approach(Enum):
     PA = '1'
@@ -154,6 +163,16 @@ class Hours(Enum):
     CMDR = "Aircraft Commander"
     SCT = "Special Crew Time"
     TR = "T&R Codes"
+
+class AC_Type(Enum):
+    SEL = "Single Engine Land"
+    MEL = "Multi Engine Land"
+    SES = "Single Engine Sea"
+    MES = "Multi Engine Sea"
+    HEL = "Heliocopter"
+    TLT = "Tilt Rotor"
+    GLD = "Glider"
+    UNK = "Unknown"
 
 def title_map(type = None):
     if not type:

@@ -71,7 +71,7 @@ def msharp(log_file, aircraft_filter='All', nav = False):
     ##               Add role                    ##
     ###############################################
     msharp_data["Role"] = msharp_data.apply(lambda row: Role.ACFT_CMDR.name if row["ACMDR"] > 0.0 else (Role.COPILOT.name if row["TPT"] > 0.0 else Role.OTHER.name) , axis=1)
-    msharp_data = msharp_data.rename(columns={"TMS": "Model", "ACT": "AIT", "NAVFLIR":"Record", 6.0:""})
+    msharp_data = msharp_data.rename(columns={"TMS": "Model", "SIM": "SIT", "ACT": "AIT", "NAVFLIR":"Record", 6.0:""})
 
     msharp_data["Record"] = msharp_data["Record"].apply(lambda x: str(uuid.uuid4())[:8] if pd.isna(x) else x)
     msharp_data["Sorties"] = 1
@@ -80,8 +80,9 @@ def msharp(log_file, aircraft_filter='All', nav = False):
     ##          Read in Navflir Data             ##
     ###############################################
     if nav:
-        data = {}
-        msharp_data = msharp_data.assign(Origin = np.nan, Destination = np.nan, Route = np.nan)
+        #Add the new columns
+        msharp_data = msharp_data.assign(Origin = np.nan, Destination = np.nan, Route = np.nan, Remarks = np.nan)
+
         nav_folder = os.path.join(os.path.dirname(log_file), "NAVFLIRS")
         files = getFILES(folder = nav_folder)
         bar = Bar(nav_folder+":", max=len(files))
@@ -93,6 +94,8 @@ def msharp(log_file, aircraft_filter='All', nav = False):
 
             recordID = pageObj.extractText().split('\n')[-6]
             pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)
+
+            #print(pdf_data)
 
             recordIndex = msharp_data.index[msharp_data['Record'] == recordID].tolist()
             route_data = pdf_data[2].iloc[2:].reset_index(drop = True)
@@ -108,6 +111,8 @@ def msharp(log_file, aircraft_filter='All', nav = False):
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Origin')] = origin
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Destination')] = destination
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Route')] = route
+            msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Remarks')] = pdf_data[-1].iloc[0,0]
+            #break
         bar.finish()
     #print(msharp_data)
 

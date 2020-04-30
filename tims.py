@@ -2,16 +2,15 @@ import pandas as pd
 import tabula
 import numpy as np
 from CNAFenums import Approach, Landing, Role
-import uuid, re
+import uuid, re, os
 from datetime import datetime
 from local_func import getFILES, clean_pd, isSolo, split_fp
 from progress.bar import Bar
 
 
-def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000"):
+def tims(log_file, nav = False, aircraft_filter='All', EDIPI = "0000000000"):
     wing_date = "10/02/2012"
     edipi_str = 'xxxxxx'+EDIPI[-4:]
-    print(edipi_str)
 
     ###############################################
     ##             Clean input                   ##
@@ -63,18 +62,18 @@ def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000
     #Set role baised off hours and date
     data["Role"] = data.apply(lambda row: Role.INSTRUCTOR.name if row["IPT"] > 0.0 else (Role.COPILOT.name if row["Date"] > datetime.strptime(wing_date, "%d/%m/%Y") else Role.STUDENT_PILOT.name) , axis=1)
     #Split date a Time
-    data["Time"] = data["Date"].apply(lambda x:  x.strftime('%H:%M'))
+    #data["Time"] = data["Date"].apply(lambda x:  x.strftime('%H:%M'))
     #data["Date"] = data["Date"].apply(lambda x:  x.strftime('%d/%m/%Y'))
     #Set type based off model name
     data["Type"] = data["Model"].apply(lambda x: "Aircraft" if x.startswith("T") else "Simulator")
     #rename columns to match
-    data = data.rename(columns={"Bureau #": "Device", "Document Number": "Record", "# Sorties": "Sorties"})
+    data = data.rename(columns={"Bureau #": "Device", "Document Number": "Record", "# Sorties": "Sorties", "NT": "NIGHT"})
 
     ###############################################
     ##              read navflirs                ##
     ###############################################
-    if nav_folder != None:
-        files = getFILES(folder = nav_folder)
+    if nav:
+        files = getFILES(folder = os.path.join(os.path.dirname(log_file), "NAVFLIRS"))
         bar = Bar('NAVFLIRS:', max=len(files))
         for file in files:
             pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)[0]
@@ -113,7 +112,7 @@ def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000
                     #if len(stops) > 2:
                     #    flights.at[matched_index[0], "Route"] = stops[1:-1]
                     legs_dict = split_fp(stops)
-                    data.at[matched_index[0], "Route of Flight"] = legs_dict["Route of Flight"]
+                    data.at[matched_index[0], "Route"] = legs_dict["Route"]
                     if isSolo(Aircrew):
                         data.at[matched_index[0], "Solo"] = data.at[matched_index[0], "TPT"]
                     else:
@@ -131,7 +130,7 @@ def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000
                                 T_R.append(line["Event"])
                         else:
                             others.append("%s for %s"%( line["Event"], line["Person Receiving Event"]))
-                    data.at[matched_index[0], "TR"] = T_R
+                    data.at[matched_index[0], "TR"] = " - ".join(T_R)
                     #print(flights.dtypes)
                 elif len(matched_index) > 1:
                     print("ERROR FOUND MULTIPLE MATCHING RECORDS: %s"%Admin.at[1, 'Document'])
@@ -139,5 +138,7 @@ def tims(log_file, nav_folder = None, aircraft_filter='All', EDIPI = "0000000000
                     print("NO MATCH FOUND.")
             bar.next()
         bar.finish()
+    else:
+        print("NO NAV")
 
     return data

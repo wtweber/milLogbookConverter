@@ -23,12 +23,13 @@ def isSolo(crew):
     if crew.shape[0] == 1:
         return True
     return False
+
 def split_fp(flight_path = ['ZZZZ', 'ZZZZ']):
     seperator = ", "
     dash = "-"
-    if len(flight_path) == 2:
-        return {'From':flight_path[0], 'To':flight_path[-1], 'Route':'', 'Route of Flight':dash.join(flight_path)}
+    if flight_path == ['ZZZZ', 'ZZZZ']:
+        return {'From':"", 'To': "", 'Route': ""}
     else:
         route_str = seperator.join(flight_path[1:len(flight_path)-1])
         #for i in range(1, flight_path.len()-1):
-        return {'From':flight_path[0], 'To':flight_path[-1], 'Route':route_str, 'Route of Flight':dash.join(flight_path)}
+        return {'From':flight_path[0], 'To': flight_path[-1], 'Route': dash.join(flight_path)}
