@@ -96,7 +96,7 @@ class Landing(Enum):
     NightVSTOLVert = 'J'
     NightVSTOLVertRoll = 'K'
     NVGFCLP = 'Q'
-    OTHER = '?'
+    OTH = '?'
 
     @property
     def LdgType(self):
@@ -180,6 +180,42 @@ def title_map(type = None):
     elif type =='MSHARP':
         return {
         }
+
+class PAX_Pri(Enum):
+    PRI1 = "Emergency airlift"
+    PRI2 = "Official buisness"
+    PRI3 = "Official buisness/classified"
+    PRI4 = "Official buisness/group"
+    PRI5 = "Offical buisness/other"
+    OPR = "Opertune Passengers"
+
+class Cargo_code(Enum):
+    A = "Mail"
+    B = "Aircraft spares, part"
+    C = "Avionics spares, parts"
+    D = "Aircraft engines"
+    E = "Ship parts"
+    F = "Electronic spares, parts"
+    G = "Electronic test equipment"
+    H = "Ground support equipment"
+    I = "Boats"
+    J = "Medical equipement, supplies"
+    K = "Organizational equipment"
+    L = "Maintenance tools, equipment"
+    M = "Petroleum products/tanker fuel"
+    N = "Explosives, flares, ammunition"
+    O = "Aircraft"
+    P = "Weapons, weapon parts"
+    Q = "Missiles, torpedoes"
+    R = "Drones, air targets"
+    S = "Chemicals"
+    T = "Vehicles, vans, trailers"
+    U = "Food, commissary supplies"
+    V = "Musical instruments"
+    W = "Human remains"
+    X = "Other aviation cargo"
+    Y = "Other general cargo"
+    Z = "Other"
 # class EnumEncoder(json.JSONEncoder):
 #     def default(self, obj):
 #         print(type(obj))

@@ -33,3 +33,8 @@ def split_fp(flight_path = ['ZZZZ', 'ZZZZ']):
         route_str = seperator.join(flight_path[1:len(flight_path)-1])
         #for i in range(1, flight_path.len()-1):
         return {'From':flight_path[0], 'To': flight_path[-1], 'Route': dash.join(flight_path)}
+def INTERGER(s):
+    try:
+        return int(s)
+    except:
+        return 0

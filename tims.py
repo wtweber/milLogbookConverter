@@ -28,7 +28,10 @@ def tims(log_file, nav = False, aircraft_filter='All', EDIPI = "0000000000"):
     ###############################################
     for index, row in data.iterrows():
         if not pd.isna(row["Event"]):
-            row["Remarks"] = "-".join([str(row["Event"]), str(row["Remarks"])])
+            if not pd.isna(row["Remarks"]):
+                row["Remarks"] = "-".join([str(row["Event"]), str(row["Remarks"])])
+            else:
+                row["Remarks"] = str(row["Event"])
         if pd.isna(row["Date"]):
             data.iat[index-1,-1] = ", ".join([str(data.iat[index-1,-1]), str(row["Remarks"])])
     data = data.dropna(subset = ["Date"])
@@ -65,7 +68,8 @@ def tims(log_file, nav = False, aircraft_filter='All', EDIPI = "0000000000"):
     #data["Time"] = data["Date"].apply(lambda x:  x.strftime('%H:%M'))
     #data["Date"] = data["Date"].apply(lambda x:  x.strftime('%d/%m/%Y'))
     #Set type based off model name
-    data["Type"] = data["Model"].apply(lambda x: "Aircraft" if x.startswith("T") else "Simulator")
+    sim_names = ["OFT", "UTD", "SIM"]
+    data["Type"] = data["Model"].apply(lambda x: "Aircraft" if x.startswith("T") and not any(sim in x for sim in sim_names) else "Simulator")
     #rename columns to match
     data = data.rename(columns={"Bureau #": "Device", "Document Number": "Record", "# Sorties": "Sorties", "NT": "NIGHT"})
 
@@ -74,7 +78,7 @@ def tims(log_file, nav = False, aircraft_filter='All', EDIPI = "0000000000"):
     ###############################################
     if nav:
         files = getFILES(folder = os.path.join(os.path.dirname(log_file), "NAVFLIRS"))
-        bar = Bar('NAVFLIRS:', max=len(files))
+        bar = Bar('TIMS: NAVFLIRS:', max=len(files))
         for file in files:
             pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)[0]
             admin_index = 0#pdf_data.index[pdf_data.loc[:, 0]=='Admin'].tolist()#[0]
@@ -138,7 +142,8 @@ def tims(log_file, nav = False, aircraft_filter='All', EDIPI = "0000000000"):
                     print("NO MATCH FOUND.")
             bar.next()
         bar.finish()
-    else:
-        print("NO NAV")
+#    else:
+#        print("NO NAV")
+#    print(data)
 
     return data

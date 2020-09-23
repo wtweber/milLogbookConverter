@@ -2,13 +2,13 @@ import pandas as pd
 import tabula
 import numpy as np
 from CNAFenums import Approach, Landing, Role
-from local_func import getFILES
+from local_func import getFILES, INTERGER
 import uuid, re, os, glob
 import PyPDF2
 from progress.bar import Bar
 
 def msharp(log_file, aircraft_filter='All', nav = False):
-    print(log_file)
+    #print(log_file)
     msharp_data_raw = pd.read_excel(log_file, index_col=None)
     Column_type = msharp_data_raw.iloc[4]
     Landings_start = pd.Index(Column_type).get_loc('Landings')
@@ -85,7 +85,7 @@ def msharp(log_file, aircraft_filter='All', nav = False):
 
         nav_folder = os.path.join(os.path.dirname(log_file), "NAVFLIRS")
         files = getFILES(folder = nav_folder)
-        bar = Bar(nav_folder+":", max=len(files))
+        bar = Bar("MSHARP NAVFLIRS:", max=len(files))
         for file in files:
             bar.next()
             pdfFileObj = open(file, 'rb')
@@ -94,14 +94,21 @@ def msharp(log_file, aircraft_filter='All', nav = False):
 
             recordID = pageObj.extractText().split('\n')[-6]
             pdf_data = tabula.read_pdf(file, multiple_tables=True, pages='all', lattice = True, silent = True)
-
-            #print(pdf_data)
-
             recordIndex = msharp_data.index[msharp_data['Record'] == recordID].tolist()
             route_data = pdf_data[2].iloc[2:].reset_index(drop = True)
             route_data.columns = pdf_data[2].iloc[1]
-            for i in range(1,len(route_data.index),2):
-                route_data.iloc[i] = route_data.iloc[i].shift(1)
+            cargo = 0
+            pax = 0
+            for i in range(0,len(route_data.index)):
+
+                loop = 0
+                while len(str(route_data.iloc[i,route_data.columns.get_loc('ICAO OR SHIP\rI.D.')])) != 4 and loop < 5:# or route_data.iloc[i,route_data.columns.get_loc('ICAO OR SHIP\rI.D.')] == np.nan:
+                    route_data.iloc[i] = route_data.iloc[i].shift(1)
+                    loop += 1
+                pax += (INTERGER(route_data.iloc[i,12]) + INTERGER(route_data.iloc[i,13]) + INTERGER(route_data.iloc[i,14]) + INTERGER(route_data.iloc[i,15]) + INTERGER(route_data.iloc[i,16]))
+                    #print("number")
+            #print(pax)
+            #print(route_data.iloc[:,12:22])
             origin = route_data.iloc[0, route_data.columns.get_loc('ICAO OR SHIP\rI.D.')]
             destination = route_data.iloc[-1, route_data.columns.get_loc('ICAO OR SHIP\rI.D.')]
             route_list = route_data.iloc[1::2, route_data.columns.get_loc('ICAO OR SHIP\rI.D.')].tolist()
@@ -111,10 +118,19 @@ def msharp(log_file, aircraft_filter='All', nav = False):
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Origin')] = origin
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Destination')] = destination
             msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Route')] = route
-            msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Remarks')] = pdf_data[-1].iloc[0,0]
-            #break
+            if len(route_list) > 1:
+                msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Sorties')] = len(route_list)-1
+            else:
+                msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Sorties')] = 1
+
+            msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Remarks')] = str(pdf_data[-1].iloc[0,0]).strip()
+            if pd.isnull(pdf_data[-1].iloc[0,0]) or pdf_data[-1].iloc[0,0]=="A":
+                msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Remarks')] = ""
+
+            else:
+                msharp_data.iloc[recordIndex, msharp_data.columns.get_loc('Remarks')] = pdf_data[-1].iloc[0,0]
+
         bar.finish()
-    #print(msharp_data)
 
     ###############################################
     ##               Filter Aircraft             ##

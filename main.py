@@ -3,27 +3,63 @@ from msharp import msharp
 from tims import tims
 from CNAFenums import Approach, Landing, Role, Hours, AC_Type
 import numpy as np
-import os
+import os, sys, json
 from progress.bar import Bar
+from progress.spinner import Spinner
+from distutils.util import strtobool
 
 
 def main():
-    load_nav = True
-    file_loc = '/home/wtweber/Documents/logBookFiles'
-    msharp_file = 'msharp/AirCrewLogBook.xlsx'
-    tims_file = 'tims/IndividualFlightHours_wizard.xlsx'
-    tims_navflirs = 'tims/Navflirs'
+    #Load the options file
+    options_file = ""
+    bool_options = ["msharp_nav", "tims_nav"]
+    for var in sys.argv[1:]:
+        if "options" in var:
+            options_file = var.split("=")[-1]
+
+    if options_file:
+        with open(options_file) as f:
+            options = json.load(f)
+    else:
+        options = {}
+    #print(options)
+
+    #validate the options file
+    for item in bool_options:
+        if item in options.keys():
+            options[item] = bool(strtobool(options[item]))# = strtobool(options["msharp_nav"])
+        else:
+            options[item] = False
+
+    if "wd" not in options.keys():
+        options["wd"] = os.getcwd()
+
+    #print(options)
+
+    #file_loc = '/home/wtweber/Documents/logBookFiles'
+    #msharp_file = 'msharp/AirCrewLogBook.xlsx'
+    #tims_file = 'tims/IndividualFlightHours_wizard.xlsx'
+    #tims_navflirs = 'tims/Navflirs'
     #tims_navflirs = "/home/wtweber/github/flight_logs/Navflirs"
     Aircraft = ['KC-130J']
 
-    msharp_data = msharp(os.path.join(file_loc, msharp_file), aircraft_filter = Aircraft, nav = load_nav)
-    tims_data = tims(os.path.join(file_loc,tims_file),  nav = load_nav , EDIPI="1296076264")
+
+    #spinner = Spinner('Loading ')
+    if "msharp_file" in options.keys():
+        print("Reading MSHARP data.")
+        msharp_data = msharp(os.path.join(options["wd"], options["msharp_file"]), aircraft_filter = Aircraft, nav = options["msharp_nav"])
+    else:
+        msharp_data = pd.DataFrame()
+    if "tims_file" in options.keys():
+        print("Reading TIMS data.")
+        tims_data = tims(os.path.join(options["wd"],options["tims_file"]),  nav = options["tims_nav"] , EDIPI="1296076264")
+    else:
+        tims_data = pd.DataFrame()
     #output_data = mil2civ(msharp_data)
+    print("Convert to civilian data.")
     output_data = mil2civ(msharp_data.append(tims_data, ignore_index=True, sort=False))
-
     output_data = aircraft_type_data(output_data)
-
-    print(returnCSV(AirlineLogbook(output_data), file_loc))
+    print(returnCSV(AirlineLogbook(output_data, output = "Airline"), options["wd"]))
 
 
 
@@ -54,6 +90,10 @@ def mil2civ(df=pd.DataFrame()):
 
     df = df.replace(0, np.nan)
 
+    ######################################
+    ##   Convert Hours to CCX           ##
+    ######################################
+    df["CC"] = df.apply(lambda row: row["TPT"] if row["TPT"] >= .5  else np.nan , axis=1)
 
     return df.sort_values(by='Date').reset_index(drop=True)
 
@@ -70,14 +110,15 @@ def split_dates(df=pd.DataFrame()):
 
     return df
 
-def AirlineLogbook(df=pd.DataFrame()):
-    airline_output = ["Date",
-                      "Model",
-                      "Device",
-                      "Type",
-                      "Route",
-                      "TPT",
-                      "SEL",
+def AirlineLogbook(df=pd.DataFrame(),output = "All"):
+    output_col = ["Date",
+                  "Model",
+                  "Device",
+                  "Type",
+                  "Route",
+                  "TPT"]
+    if output == "Airline":
+        output_col += ["SEL",
                       "MEL",
                       "HEL",
                       "TILT",
@@ -98,9 +139,40 @@ def AirlineLogbook(df=pd.DataFrame()):
                       "SCT",
                       "CAT/JATO",
                       "Remarks"]
-    airline_df = pd.DataFrame(columns=airline_output)
-    airline_df = airline_df.append(df)
-    airline_df = airline_df.iloc[:,0:len(airline_output)]
+    elif output == "Military":
+        output_col += ["TPT",
+                      "NIGHT",
+                      "AIT",
+                      "SIT",
+                      "Approaches",
+                      "CC",
+                      "Solo",
+                      "PIC",
+                      "SIC",
+                      "Dual",
+                      "IPT",
+                      "Sorties",
+                      "SCT",
+                      "CAT/JATO",
+                      "Remarks"]
+    else:
+        output_col += ["AC_Type"]
+        for type in AC_Type:
+            output_col += [type.name]
+        output_col += ["Day_ldg", "Night_ldg"]
+        for land in Landing:
+            output_col += [land.name]
+        output_col += ["Approaches"]
+        for app in Approach:
+            output_col += [app.name]
+        for hour in Hours:
+            output_col += [hour.name]
+
+    #print(output_col)
+    airline_df = pd.DataFrame(columns=output_col)
+    airline_df = airline_df.append(df, ignore_index = True, sort = False)
+    if output != "All":
+        airline_df = airline_df.iloc[:,0:len(output_col)]
     return airline_df
 
 def aircraft_type_data(df=pd.DataFrame()):
@@ -138,6 +210,9 @@ def aircraft_type_data(df=pd.DataFrame()):
     if len(error_matching):
         print("Error importing:")
         print(error_matching)
+
+    for ac in AC_Type:
+        df[ac.name] = df.apply(lambda row: row["TPT"] if AC_Type[row["AC_Type"]] == ac  else np.nan , axis=1)
 
     return df
 
